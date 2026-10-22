@@ -1,7 +1,8 @@
 use std::io;
 
 fn main() {
-    let word = "Rustacean".to_lowercase();
+    let word = hangman::get_random_word().trim().to_lowercase();
+    println!("{word}");
     let mut guess = String::new();
     let mut guessed_letters: Vec<char> = Vec::new();
     let mut attempts = 0;
