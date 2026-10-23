@@ -17,65 +17,90 @@ fn get_random_word() -> String {
         .expect("API returned no words")
 }
 
-fn display_word(word: &String, guessed_letters: &Vec<char>) {
-    for letter in word.chars() {
-        if guessed_letters.contains(&letter) {
-            print!("{letter}");
-        } else {
-            print!("_ ")
+struct Hangman {
+    word: String,
+    guessed_letters: Vec<char>,
+    attempts: i32,
+    max_attempts: i32
+}
+
+impl Hangman {
+    fn new() -> Hangman {
+        let word = get_random_word().trim().to_lowercase();
+        Hangman { word, guessed_letters: Vec::new(), attempts: 0, max_attempts: 6 }
+    }
+
+    fn display_word(&self) {
+        for letter in self.word.chars() {
+            if self.guessed_letters.contains(&letter) {
+                print!("{letter} ");
+            } else {
+                print!("_ ");
+            }
         }
+    }
+
+    fn guess_letter(&mut self, letter: char) -> bool {
+        if self.guessed_letters.contains(&letter) {
+            println!("You already guessed that letter!");
+            return false;
+        }
+
+        self.guessed_letters.push(letter);
+
+        if self.word.contains(letter) {
+            println!("Correct! Try another letter.")
+        } else {
+            self.attempts += 1;
+            println!("Wrong! Attempts: {}/{}", self.attempts, self.max_attempts)
+        }
+        true
+    }
+
+    fn is_won(&self) -> bool {
+        self.word.chars()
+            .all(|c| self.guessed_letters.contains(&c))
+    }
+
+    fn is_over(&self) -> bool {
+        self.is_won() || self.attempts >= self.max_attempts
     }
 }
 
 pub fn game_logic() {
-    let word = get_random_word().trim().to_lowercase();
+    let mut game = Hangman::new();
     let mut guess = String::new();
-    let mut guessed_letters: Vec<char> = Vec::new();
-    let mut attempts = 0;
-    let max_attempts = 6;
 
-    while attempts < max_attempts {
-        display_word(&word, &guessed_letters);
+    while !game.is_over() {
+        game.display_word();
 
+        println!("\tGuessed letters: {:?}", game.guessed_letters);
         println!("\nGuess a letter:");
 
         guess.clear();
+
         io::stdin()
             .read_line(&mut guess)
             .expect("Failed to read input");
 
         let input = guess.trim().to_lowercase();
+        let mut chars = input.chars();
 
-        if input.len() != 1 || !input.chars().all(|c| c.is_alphabetic()) {
+        let Some(letter) = chars.next()
+            .filter(|c| c.is_alphabetic())
+            .filter(|_| chars.next().is_none())
+        else {
             println!("Please enter a single letter!");
             continue;
-        }
+        };
 
-        let letter = input.chars().next().unwrap();
+        game.guess_letter(letter);
+    }
 
-        if guessed_letters.contains(&letter) {
-            println!("You already guessed that letter!");
-            continue;
-        }
-
-        guessed_letters.push(letter);
-        println!("Guessed letters: {guessed_letters:?}");
-
-        if word.contains(letter) {
-            if word.chars().all(|c| guessed_letters.contains(&c)) {
-                println!("You won! The word was: {word}");
-                break;
-            }
-            println!("Correct! Try another letter.");
-            continue;
-        } else {
-            attempts += 1;
-            println!("Wrong! Attempts: {attempts}/{max_attempts}");
-
-            if attempts == max_attempts {
-                println!("Game over! The word was: {word}")
-            }
-        }
+    if game.is_won() {
+        println!("You won! The word was: {}", game.word);
+    } else {
+        println!("Game over! The word was: {}", game.word);
     }
 
 }
