@@ -1,6 +1,6 @@
 use std::io;
 
-pub fn get_random_word() -> String {
+fn get_random_word() -> String {
     let response = reqwest::blocking::get(
         "https://random-word-api.herokuapp.com/word"
     )
@@ -17,6 +17,16 @@ pub fn get_random_word() -> String {
         .expect("API returned no words")
 }
 
+fn display_word(word: &String, guessed_letters: &Vec<char>) {
+    for letter in word.chars() {
+        if guessed_letters.contains(&letter) {
+            print!("{letter}");
+        } else {
+            print!("_ ")
+        }
+    }
+}
+
 pub fn game_logic() {
     let word = get_random_word().trim().to_lowercase();
     let mut guess = String::new();
@@ -25,13 +35,7 @@ pub fn game_logic() {
     let max_attempts = 6;
 
     while attempts < max_attempts {
-        for letter in word.chars() {
-            if guessed_letters.contains(&letter) {
-                print!("{letter} ");
-            } else {
-                print!("_ ");
-            }
-        }
+        display_word(&word, &guessed_letters);
 
         println!("\nGuess a letter:");
 
@@ -55,6 +59,7 @@ pub fn game_logic() {
         }
 
         guessed_letters.push(letter);
+        println!("Guessed letters: {guessed_letters:?}");
 
         if word.contains(letter) {
             if word.chars().all(|c| guessed_letters.contains(&c)) {
